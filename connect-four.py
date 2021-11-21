@@ -59,8 +59,8 @@ def four_in_a_row(board, player):
 # MinMax
 
 
-def other(player):
-    return player * -1
+# def other(player):
+#     return player * -1
 
 
 def score_is_better(score, current_best, player):
@@ -91,90 +91,76 @@ def print_board(board):
 
 
 def eval_for_player(board, player):
-    other_player = other(player)
-    exp = 3
-
-    score = (
-        sum(
-            [  # np.sum(board) contains the number of player's pieces in a 4-long streak
-                np.sum(board[c, r]) ** exp
+    possibilites = np.abs(
+        np.array(
+            [
+                np.sum(board[c, r])
                 for c in range(NUM_COLUMNS)
                 for r in (
                     list(range(n, n + FOUR)) for n in range(COLUMN_HEIGHT - FOUR + 1)
                 )
-                if other_player not in board[c, r]
+                if -player not in board[c, r]
             ]
-        )
-        + sum(
-            [
-                np.sum(board[c, r]) ** exp
+            + [
+                np.sum(board[c, r])
                 for r in range(COLUMN_HEIGHT)
                 for c in (
                     list(range(n, n + FOUR)) for n in range(NUM_COLUMNS - FOUR + 1)
                 )
-                if other_player not in board[c, r]
+                if -player not in board[c, r]
             ]
-        )
-        + sum(
-            [
-                np.sum(board[diag]) ** exp
+            + [
+                np.sum(board[diag])
                 for diag in (
                     (range(ro, ro + FOUR), range(co, co + FOUR))
                     for ro in range(0, NUM_COLUMNS - FOUR + 1)
                     for co in range(0, COLUMN_HEIGHT - FOUR + 1)
                 )
-                if other_player not in board[diag]
+                if -player not in board[diag]
             ]
-        )
-        + sum(
-            [
-                np.sum(board[diag]) ** exp
+            + [
+                np.sum(board[diag])
                 for diag in (
                     (range(ro, ro + FOUR), range(co + FOUR - 1, co - 1, -1))
                     for ro in range(0, NUM_COLUMNS - FOUR + 1)
                     for co in range(0, COLUMN_HEIGHT - FOUR + 1)
                 )
-                if other_player not in board[diag]
+                if -player not in board[diag]
             ]
         )
     )
 
-    if (exp % 2) == 0:
-        score = score * player
-
-    return score
+    return np.sum(np.where(possibilites == 3, possibilites * 10, possibilites))
 
 
 def eval(board):
-    return eval_for_player(board, 1) + eval_for_player(board, -1)
+    return eval_for_player(board, 1) - eval_for_player(board, -1)
 
 
 def check_win(board):
-    won = True
     if four_in_a_row(board, 1):
-        print(f"Player 1 won")
+        return 1
     elif four_in_a_row(board, -1):
-        print(f"Player 2 won")
+        return 2
     else:
-        won = False
-    return won
+        return 0
 
 
 def minmax(board, depth, alpha, beta, player):
     if four_in_a_row(board, player):
         return None, (player * math.inf)
-    elif four_in_a_row(board, other(player)):
-        return None, (other(player) * math.inf)
+    elif four_in_a_row(board, -player):
+        return None, (-player * math.inf)
     if depth == 0:
         return None, eval(board)
-    best_score = other(player) * math.inf
+    best_score = -player * math.inf
     best_move = None
     for c in valid_moves(board):
         # if there are valid moves, initialize the best move to the first available
         if best_move is None:
             best_move = c
         play(board, c, player)
-        score = minmax(board, depth - 1, alpha, beta, other(player))[1]
+        _, score = minmax(board, depth - 1, alpha, beta, -player)
         take_back(board, c)
         if score_is_better(score, best_score, player):
             best_score = score
@@ -188,6 +174,17 @@ def minmax(board, depth, alpha, beta, player):
 def main():
     player1_is_ai = True
     board = np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
+    # board = np.array(
+    #     [
+    #         [0, 0, 0, 0, 0, 0],
+    #         [-1, 1, -1, 1, -1, -1],
+    #         [1, -1, 1, -1, 1, 1],
+    #         [1, -1, 1, -1, -1, -1],
+    #         [-1, 1, -1, 1, 1, 1],
+    #         [1, -1, 1, -1, 1, 0],
+    #         [1, -1, 0, 0, 0, 0],
+    #     ]
+    # )
     player = 1
     alpha = -math.inf
     beta = math.inf
@@ -197,14 +194,16 @@ def main():
     while valid_moves(board):
         print()
         if player1_is_ai or player == -1:
-            next_move, score = minmax(board, 5, alpha, beta, player)
+            next_move, score = minmax(board, 6, alpha, beta, player)
         if (not player1_is_ai) and player == 1:
             next_move = int(input("Choose column:"))
         play(board, next_move, player)
         print_board(board)
-        if check_win(board):
+        winner = check_win(board)
+        if winner != 0:
+            print(f"Player {winner} won")
             break
-        player = other(player)
+        player = -player
 
 
 def dbg():
