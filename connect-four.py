@@ -14,7 +14,6 @@ def valid_moves(board):
 
 def play(board, column, player):
     """Updates `board` as `player` drops a disc in `column`"""
-    # print(f"play() column, player: {column}, {player}")
     (index,) = next((i for i, v in np.ndenumerate(board[column]) if v == 0))
     board[column, index] = player
 
@@ -70,6 +69,7 @@ def score_is_better(score, current_best, player):
     else:
         return score < current_best
 
+
 def prune(alpha, beta, score, player):
     if player == 1:
         return score >= beta
@@ -84,63 +84,80 @@ def update_alpha_beta(alpha, beta, best_score, player):
         return alpha, min(beta, best_score)
 
 
-def count_streaks(board, player, length):
-    """Checks how many length-piece lines the player has"""
-    return (
+def print_board(board):
+    for c in range(NUM_COLUMNS):
+        column = np.array([2 if x == -1 else x for x in board[c, :]])
+        print(f"{c} {column}")
+
+
+def eval_for_player(board, player):
+    other_player = other(player)
+    exp = 3
+
+    score = (
         sum(
-            all(board[c, r] == player)
-            for c in range(NUM_COLUMNS)
-            for r in (
-                list(range(n, n + length)) for n in range(COLUMN_HEIGHT - length + 1)
-            )
+            [  # np.sum(board) contains the number of player's pieces in a 4-long streak
+                np.sum(board[c, r]) ** exp
+                for c in range(NUM_COLUMNS)
+                for r in (
+                    list(range(n, n + FOUR)) for n in range(COLUMN_HEIGHT - FOUR + 1)
+                )
+                if other_player not in board[c, r]
+            ]
         )
         + sum(
-            all(board[c, r] == player)
-            for r in range(COLUMN_HEIGHT)
-            for c in (
-                list(range(n, n + length)) for n in range(NUM_COLUMNS - length + 1)
-            )
+            [
+                np.sum(board[c, r]) ** exp
+                for r in range(COLUMN_HEIGHT)
+                for c in (
+                    list(range(n, n + FOUR)) for n in range(NUM_COLUMNS - FOUR + 1)
+                )
+                if other_player not in board[c, r]
+            ]
         )
         + sum(
-            np.all(board[diag] == player)
-            for diag in (
-                (range(ro, ro + length), range(co, co + length))
-                for ro in range(0, NUM_COLUMNS - length + 1)
-                for co in range(0, COLUMN_HEIGHT - length + 1)
-            )
+            [
+                np.sum(board[diag]) ** exp
+                for diag in (
+                    (range(ro, ro + FOUR), range(co, co + FOUR))
+                    for ro in range(0, NUM_COLUMNS - FOUR + 1)
+                    for co in range(0, COLUMN_HEIGHT - FOUR + 1)
+                )
+                if other_player not in board[diag]
+            ]
         )
         + sum(
-            np.all(board[diag] == player)
-            for diag in (
-                (range(ro, ro + length), range(co + length - 1, co - 1, -1))
-                for ro in range(0, NUM_COLUMNS - length + 1)
-                for co in range(0, COLUMN_HEIGHT - length + 1)
-            )
+            [
+                np.sum(board[diag]) ** exp
+                for diag in (
+                    (range(ro, ro + FOUR), range(co + FOUR - 1, co - 1, -1))
+                    for ro in range(0, NUM_COLUMNS - FOUR + 1)
+                    for co in range(0, COLUMN_HEIGHT - FOUR + 1)
+                )
+                if other_player not in board[diag]
+            ]
         )
     )
 
-
-def eval(board):
-    score = 0
-
-    pos_3_streaks = count_streaks(board, 1, 3)
-    neg_3_streaks = count_streaks(board, -1, 3)
-    pos_2_streaks = count_streaks(board, 1, 2) - pos_3_streaks
-    neg_2_streaks = count_streaks(board, -1, 2) - neg_3_streaks
-
-    score += 10 *pos_3_streaks
-    score -= 7 *neg_3_streaks
-    score += 5 *pos_2_streaks
-    score -= 4 *neg_2_streaks
+    if (exp % 2) == 0:
+        score = score * player
 
     return score
 
 
+def eval(board):
+    return eval_for_player(board, 1) + eval_for_player(board, -1)
+
+
 def check_win(board):
+    won = True
     if four_in_a_row(board, 1):
         print(f"Player 1 won")
     elif four_in_a_row(board, -1):
-        print(f"Player -1 won")
+        print(f"Player 2 won")
+    else:
+        won = False
+    return won
 
 
 def minmax(board, depth, alpha, beta, player):
@@ -153,6 +170,9 @@ def minmax(board, depth, alpha, beta, player):
     best_score = other(player) * math.inf
     best_move = None
     for c in valid_moves(board):
+        # if there are valid moves, initialize the best move to the first available
+        if best_move is None:
+            best_move = c
         play(board, c, player)
         score = minmax(board, depth - 1, alpha, beta, other(player))[1]
         take_back(board, c)
@@ -162,27 +182,61 @@ def minmax(board, depth, alpha, beta, player):
         if prune(alpha, beta, best_score, player):
             break
         alpha, beta = update_alpha_beta(alpha, beta, best_score, player)
-    if best_move is None:
-        best_move = c
     return best_move, best_score
 
 
 def main():
+    player1_is_ai = True
     board = np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
     player = 1
     alpha = -math.inf
     beta = math.inf
 
+    print_board(board)
+
     while valid_moves(board):
-        next_move, score = minmax(board, 5, alpha, beta, player)
-        if next_move is None:
-            break
-        play(board, next_move, player)
-        print(board)
         print()
+        if player1_is_ai or player == -1:
+            next_move, score = minmax(board, 5, alpha, beta, player)
+        if (not player1_is_ai) and player == 1:
+            next_move = int(input("Choose column:"))
+        play(board, next_move, player)
+        print_board(board)
+        if check_win(board):
+            break
         player = other(player)
 
-    check_win(board)
+
+def dbg():
+    board = np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
+    play(board, 0, -1)
+    play(board, 0, -1)
+    play(board, 0, -1)
+    play(board, 1, -1)
+    play(board, 1, -1)
+
+    play(board, 3, 1)
+    play(board, 3, 1)
+    play(board, 3, 1)
+    play(board, 3, 1)
+    play(board, 4, 1)
+    play(board, 4, 1)
+    play(board, 5, 1)
+
+    diags = [
+        board[diag]
+        for diag in (
+            (range(ro, ro + FOUR), range(co + FOUR - 1, co - 1, -1))
+            for ro in range(0, NUM_COLUMNS - FOUR + 1)
+            for co in range(0, COLUMN_HEIGHT - FOUR + 1)
+        )
+        if -1 not in board[diag]
+    ]
+
+    print(board)
+
+    for diag in diags:
+        print(f"{diag} score = {sum(diag) ** 4}")
 
 
 if __name__ == "__main__":
