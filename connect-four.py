@@ -188,7 +188,7 @@ def main():
     while valid_moves(board):
         print()
         if player1_is_ai or player == -1:
-            next_move, score = minmax(board, 6, alpha, beta, player)
+            next_move, score = minmax(board, 5, alpha, beta, player)
         if (not player1_is_ai) and player == 1:
             next_move = int(input("Choose column:"))
         play(board, next_move, player)
