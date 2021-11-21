@@ -91,50 +91,44 @@ def print_board(board):
 
 
 def eval_for_player(board, player):
-    possibilites = np.abs(
-        np.array(
-            [
-                np.sum(board[c, r])
-                for c in range(NUM_COLUMNS)
-                for r in (
-                    list(range(n, n + FOUR)) for n in range(COLUMN_HEIGHT - FOUR + 1)
-                )
-                if -player not in board[c, r]
-            ]
-            + [
-                np.sum(board[c, r])
-                for r in range(COLUMN_HEIGHT)
-                for c in (
-                    list(range(n, n + FOUR)) for n in range(NUM_COLUMNS - FOUR + 1)
-                )
-                if -player not in board[c, r]
-            ]
-            + [
-                np.sum(board[diag])
-                for diag in (
-                    (range(ro, ro + FOUR), range(co, co + FOUR))
-                    for ro in range(0, NUM_COLUMNS - FOUR + 1)
-                    for co in range(0, COLUMN_HEIGHT - FOUR + 1)
-                )
-                if -player not in board[diag]
-            ]
-            + [
-                np.sum(board[diag])
-                for diag in (
-                    (range(ro, ro + FOUR), range(co + FOUR - 1, co - 1, -1))
-                    for ro in range(0, NUM_COLUMNS - FOUR + 1)
-                    for co in range(0, COLUMN_HEIGHT - FOUR + 1)
-                )
-                if -player not in board[diag]
-            ]
-        )
+    possibilites = np.array(
+        [
+            np.sum(board[c, r])
+            for c in range(NUM_COLUMNS)
+            for r in (list(range(n, n + FOUR)) for n in range(COLUMN_HEIGHT - FOUR + 1))
+            if -player not in board[c, r]
+        ]
+        + [
+            np.sum(board[c, r])
+            for r in range(COLUMN_HEIGHT)
+            for c in (list(range(n, n + FOUR)) for n in range(NUM_COLUMNS - FOUR + 1))
+            if -player not in board[c, r]
+        ]
+        + [
+            np.sum(board[diag])
+            for diag in (
+                (range(ro, ro + FOUR), range(co, co + FOUR))
+                for ro in range(0, NUM_COLUMNS - FOUR + 1)
+                for co in range(0, COLUMN_HEIGHT - FOUR + 1)
+            )
+            if -player not in board[diag]
+        ]
+        + [
+            np.sum(board[diag])
+            for diag in (
+                (range(ro, ro + FOUR), range(co + FOUR - 1, co - 1, -1))
+                for ro in range(0, NUM_COLUMNS - FOUR + 1)
+                for co in range(0, COLUMN_HEIGHT - FOUR + 1)
+            )
+            if -player not in board[diag]
+        ]
     )
 
-    return np.sum(np.where(possibilites == 3, possibilites * 10, possibilites))
+    return np.sum(np.where(np.abs(possibilites) == 3, possibilites * 10, possibilites))
 
 
 def eval(board):
-    return eval_for_player(board, 1) - eval_for_player(board, -1)
+    return eval_for_player(board, 1) + eval_for_player(board, -1)
 
 
 def check_win(board):
