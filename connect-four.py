@@ -70,13 +70,6 @@ def score_is_better(score, current_best, player):
         return score < current_best
 
 
-def prune(alpha, beta, score, player):
-    if player == 1:
-        return score >= beta
-    else:
-        return score <= alpha
-
-
 def update_alpha_beta(alpha, beta, best_score, player):
     if player == 1:
         return max(alpha, best_score), beta
@@ -159,9 +152,9 @@ def minmax(board, depth, alpha, beta, player):
         if score_is_better(score, best_score, player):
             best_score = score
             best_move = c
-        if prune(alpha, beta, best_score, player):
-            break
         alpha, beta = update_alpha_beta(alpha, beta, best_score, player)
+        if alpha >= beta:
+            break
     return best_move, best_score
 
 
