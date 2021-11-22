@@ -8,9 +8,24 @@ FOUR = 4
 SYMBOLS = {1: "X", -1: "O", 0: "-"}
 
 
+def sorted_columns():
+    center = NUM_COLUMNS // 2
+    columns = [center]
+    for i in range(center):
+        i += 1
+        col = center - i
+        if col >= 0:
+            columns.append(col)
+        col = center + i
+        if col < NUM_COLUMNS:
+            columns.append(col)
+    return columns
+
+
 def valid_moves(board):
     """Returns columns where a disc may be played"""
-    return [n for n in range(NUM_COLUMNS) if board[n, COLUMN_HEIGHT - 1] == 0]
+    # return [n for n in range(NUM_COLUMNS) if board[n, COLUMN_HEIGHT - 1] == 0]
+    return [n for n in sorted_columns() if board[n, COLUMN_HEIGHT - 1] == 0]
 
 
 def play(board, column, player):
