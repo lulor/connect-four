@@ -78,9 +78,18 @@ def update_alpha_beta(alpha, beta, best_score, player):
 
 
 def print_board(board):
-    for c in range(NUM_COLUMNS):
-        column = np.array([2 if x == -1 else x for x in board[c, :]])
-        print(f"{c} {column}")
+    symbols = {1: "X", -1: "O", 0: "-"}
+
+    for r in reversed(range(COLUMN_HEIGHT)):
+        print("|", end=" ")
+        for c in range(NUM_COLUMNS):
+            print(symbols[board[c][r]], end=" ")
+        print("|")
+
+    print(" ", end=" ")
+    for x in range(NUM_COLUMNS):
+        print(x, end=" ")
+    print()
 
 
 def eval_for_player(board, player):
