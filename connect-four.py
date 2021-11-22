@@ -59,10 +59,6 @@ def four_in_a_row(board, player):
 # MinMax
 
 
-# def other(player):
-#     return player * -1
-
-
 def score_is_better(score, current_best, player):
     if player == 1:
         return score > current_best
