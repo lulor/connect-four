@@ -5,6 +5,7 @@ import math
 NUM_COLUMNS = 7
 COLUMN_HEIGHT = 6
 FOUR = 4
+SYMBOLS = {1: "X", -1: "O", 0: "-"}
 
 
 def valid_moves(board):
@@ -59,35 +60,6 @@ def four_in_a_row(board, player):
 # MinMax
 
 
-def score_is_better(score, current_best, player):
-    if player == 1:
-        return score > current_best
-    else:
-        return score < current_best
-
-
-def update_alpha_beta(alpha, beta, best_score, player):
-    if player == 1:
-        return max(alpha, best_score), beta
-    else:
-        return alpha, min(beta, best_score)
-
-
-def print_board(board):
-    symbols = {1: "X", -1: "O", 0: "-"}
-
-    for r in reversed(range(COLUMN_HEIGHT)):
-        print("|", end=" ")
-        for c in range(NUM_COLUMNS):
-            print(symbols[board[c][r]], end=" ")
-        print("|")
-
-    print(" ", end=" ")
-    for x in range(NUM_COLUMNS):
-        print(x, end=" ")
-    print()
-
-
 def eval_for_player(board, player):
     possibilites = np.array(
         [
@@ -129,11 +101,18 @@ def eval(board):
     return eval_for_player(board, 1) + eval_for_player(board, -1)
 
 
-def check_win(board):
-    for player in [1, -1]:
-        if four_in_a_row(board, player):
-            return player
-    return 0
+def score_is_better(score, current_best, player):
+    if player == 1:
+        return score > current_best
+    else:
+        return score < current_best
+
+
+def update_alpha_beta(alpha, beta, best_score, player):
+    if player == 1:
+        return max(alpha, best_score), beta
+    else:
+        return alpha, min(beta, best_score)
 
 
 def minmax(board, depth, alpha, beta, player):
@@ -147,6 +126,7 @@ def minmax(board, depth, alpha, beta, player):
     best_move = None
     for c in valid_moves(board):
         # if there are valid moves, initialize the best move to the first available
+        # this way, if there are no good moves available, we will just choose the first one
         if best_move is None:
             best_move = c
         play(board, c, player)
@@ -161,8 +141,27 @@ def minmax(board, depth, alpha, beta, player):
     return best_move, best_score
 
 
+def print_board(board):
+    for r in reversed(range(COLUMN_HEIGHT)):
+        print("|", end=" ")
+        for c in range(NUM_COLUMNS):
+            print(SYMBOLS[board[c][r]], end=" ")
+        print("|")
+
+    print(" ", end=" ")
+    for x in range(NUM_COLUMNS):
+        print(x, end=" ")
+    print()
+
+
+def check_win(board):
+    for player in [1, -1]:
+        if four_in_a_row(board, player):
+            return player
+    return 0
+
+
 def main():
-    symbols = {1: "X", -1: "O"}
     player1_is_ai = True
     board = np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
     player = 1
@@ -181,7 +180,7 @@ def main():
         print_board(board)
         winner = check_win(board)
         if winner != 0:
-            print(f"Player {symbols[winner]} won")
+            print(f"Player {SYMBOLS[winner]} won")
             break
         player = -player
 
