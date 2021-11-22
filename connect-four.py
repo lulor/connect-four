@@ -162,7 +162,7 @@ def check_win(board):
 
 
 def main():
-    player1_is_ai = True
+    player1_is_ai = False
     board = np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
     player = 1
     alpha = -math.inf
