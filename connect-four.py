@@ -150,7 +150,7 @@ def print_board(board):
 
     print(" ", end=" ")
     for x in range(NUM_COLUMNS):
-        print(x, end=" ")
+        print(x + 1, end=" ")
     print()
 
 
@@ -175,7 +175,7 @@ def main():
         if player1_is_ai or player == -1:
             next_move, score = minmax(board, 5, alpha, beta, player)
         if (not player1_is_ai) and player == 1:
-            next_move = int(input("Choose column:"))
+            next_move = int(input("Choose column:")) - 1
         play(board, next_move, player)
         print_board(board)
         winner = check_win(board)
