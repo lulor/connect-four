@@ -166,17 +166,6 @@ def minmax(board, depth, alpha, beta, player):
 def main():
     player1_is_ai = True
     board = np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
-    # board = np.array(
-    #     [
-    #         [0, 0, 0, 0, 0, 0],
-    #         [-1, 1, -1, 1, -1, -1],
-    #         [1, -1, 1, -1, 1, 1],
-    #         [1, -1, 1, -1, -1, -1],
-    #         [-1, 1, -1, 1, 1, 1],
-    #         [1, -1, 1, -1, 1, 0],
-    #         [1, -1, 0, 0, 0, 0],
-    #     ]
-    # )
     player = 1
     alpha = -math.inf
     beta = math.inf
@@ -196,38 +185,6 @@ def main():
             print(f"Player {winner} won")
             break
         player = -player
-
-
-def dbg():
-    board = np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
-    play(board, 0, -1)
-    play(board, 0, -1)
-    play(board, 0, -1)
-    play(board, 1, -1)
-    play(board, 1, -1)
-
-    play(board, 3, 1)
-    play(board, 3, 1)
-    play(board, 3, 1)
-    play(board, 3, 1)
-    play(board, 4, 1)
-    play(board, 4, 1)
-    play(board, 5, 1)
-
-    diags = [
-        board[diag]
-        for diag in (
-            (range(ro, ro + FOUR), range(co + FOUR - 1, co - 1, -1))
-            for ro in range(0, NUM_COLUMNS - FOUR + 1)
-            for co in range(0, COLUMN_HEIGHT - FOUR + 1)
-        )
-        if -1 not in board[diag]
-    ]
-
-    print(board)
-
-    for diag in diags:
-        print(f"{diag} score = {sum(diag) ** 4}")
 
 
 if __name__ == "__main__":
