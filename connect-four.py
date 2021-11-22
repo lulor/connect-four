@@ -130,12 +130,10 @@ def eval(board):
 
 
 def check_win(board):
-    if four_in_a_row(board, 1):
-        return 1
-    elif four_in_a_row(board, -1):
-        return 2
-    else:
-        return 0
+    for player in [1, -1]:
+        if four_in_a_row(board, player):
+            return player
+    return 0
 
 
 def minmax(board, depth, alpha, beta, player):
@@ -164,6 +162,7 @@ def minmax(board, depth, alpha, beta, player):
 
 
 def main():
+    symbols = {1: "X", -1: "O"}
     player1_is_ai = True
     board = np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
     player = 1
@@ -182,7 +181,7 @@ def main():
         print_board(board)
         winner = check_win(board)
         if winner != 0:
-            print(f"Player {winner} won")
+            print(f"Player {symbols[winner]} won")
             break
         player = -player
 
