@@ -1,10 +1,12 @@
 from collections import Counter
 import numpy as np
 import math
+import random
 
 NUM_COLUMNS = 7
 COLUMN_HEIGHT = 6
 FOUR = 4
+SYMBOLS = {1: "X", -1: "O", 0: "-"}
 
 
 def valid_moves(board):
@@ -88,120 +90,110 @@ def eval_board(board, player):
         return montecarlo(board, player)
 
 
-# MinMax
+# MCTS
 
 
-def other(player):
-    return player * -1
+def gen_board():
+    return np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
 
 
-def score_is_better(score, current_best, player):
-    if player == 1:
-        return score > current_best
-    else:
-        return score < current_best
+def ucb(s_p, s, w, c=1):
+    return (w / s) + c * math.sqrt(math.log(s_p) / s)
 
 
-def prune(alpha, beta, score, player):
-    if player == 1:
-        return score >= beta
-    else:
-        return score <= alpha
+def is_terminal(board):
+    if not valid_moves(board):
+        return True
+    for p in [-1, 1]:
+        if four_in_a_row(board, p):
+            return True
+    return False
 
 
-def update_alpha_beta(alpha, beta, best_score, player):
-    if player == 1:
-        return max(alpha, best_score), beta
-    else:
-        return alpha, min(beta, best_score)
+class node:
+    def __init__(self, parent, board, player):
+        self.state = board
+        self.player = player
+        self.children = set()
+        self.parent = parent
+        self.simulations = 0
+        self.wins = 0
+
+    def select(self):
+        best_node = self
+        while best_node.children and all(
+            child.simulations > 0 for child in best_node.children
+        ):
+            best_node = max(best_node.children, key=lambda child: child.get_ucb())
+        return best_node
+
+    def expand(self):
+        if not self.children:
+            for c in valid_moves(self.state):
+                play(self.state, c, self.player)
+                self.children.add(node(self, np.copy(self.state), -self.player))
+                take_back(self.state, c)
+
+    def simulate(self):
+        winner = _mc(np.copy(self.state), self.player)
+
+        # backpropagation
+        node = self
+        while node is not None:
+            node.simulations += 1
+            if winner != node.player:
+                node.wins += 1
+            node = node.parent
+
+    def get_ucb(self):
+        if not self.parent:
+            return None
+        return ucb(self.parent.simulations, self.simulations, self.wins)
+
+
+def run_mcts(node):
+    node = node.select()  # select node using usb
+    if is_terminal(node.state):
+        return
+    node.expand()
+    node = random.choice([child for child in node.children if child.simulations == 0])
+    node.simulate()
+
+
+def get_best(node):
+    if not node.children:
+        return None
+    return max(node.children, key=lambda child: child.wins / child.simulations)
 
 
 def print_board(board):
-    for c in range(NUM_COLUMNS):
-        column = np.array([2 if x == -1 else x for x in board[c, :]])
-        print(f"{c} {column}")
+    for r in reversed(range(COLUMN_HEIGHT)):
+        print("|", end=" ")
+        for c in range(NUM_COLUMNS):
+            print(SYMBOLS[board[c][r]], end=" ")
+        print("|")
 
-
-def best_evaluation(evaluations, player):
-    if player == 1:
-        return max(evaluations, key=lambda k: k[1])
-    return min(evaluations, key=lambda k: k[1])
-
-
-def check_win(board):
-    won = True
-    if four_in_a_row(board, 1):
-        print(f"Player 1 won")
-    elif four_in_a_row(board, -1):
-        print(f"Player 2 won")
-    else:
-        won = False
-    return won
-
-
-def minmax(board, player, alpha, beta, depth):
-    evaluations = []
-    if depth == 0:
-        return None, eval_board(board, player)
-    possible_moves = valid_moves(board)
-    for c in possible_moves:
-        _, val = minmax(board, -player, alpha, beta, depth - 1)
-        evaluations.append((c, val))
-    return best_evaluation(evaluations, player)
+    print(" ", end=" ")
+    for x in range(NUM_COLUMNS):
+        print(x + 1, end=" ")
+    print()
 
 
 def main():
-    player1_is_ai = True
-    board = np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
-    player = 1
-    alpha = -math.inf
-    beta = math.inf
+    root = node(None, gen_board(), 1)
+    current_node = root
 
-    print_board(board)
-
-    while valid_moves(board):
-        print()
-        if player1_is_ai or player == -1:
-            next_move, score = minmax(board, player, alpha, beta, 3)
-        if (not player1_is_ai) and player == 1:
-            next_move = int(input("Choose column:"))
-        play(board, next_move, player)
-        print_board(board)
-        if check_win(board):
+    while valid_moves(current_node.state):
+        print_board(current_node.state)
+        for _ in range(500):
+            run_mcts(current_node)
+        for p in [-1, 1]:
+            if four_in_a_row(current_node.state, p):
+                print(f"Player {SYMBOLS[p]} won")
+        current_node = get_best(current_node)
+        if current_node is None:
             break
-        player = other(player)
-
-
-def dbg():
-    board = np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
-    play(board, 0, -1)
-    play(board, 0, -1)
-    play(board, 0, -1)
-    play(board, 1, -1)
-    play(board, 1, -1)
-
-    play(board, 3, 1)
-    play(board, 3, 1)
-    play(board, 3, 1)
-    play(board, 3, 1)
-    play(board, 4, 1)
-    play(board, 4, 1)
-    play(board, 5, 1)
-
-    diags = [
-        board[diag]
-        for diag in (
-            (range(ro, ro + FOUR), range(co + FOUR - 1, co - 1, -1))
-            for ro in range(0, NUM_COLUMNS - FOUR + 1)
-            for co in range(0, COLUMN_HEIGHT - FOUR + 1)
-        )
-        if -1 not in board[diag]
-    ]
-
-    print(board)
-
-    for diag in diags:
-        print(f"{diag} score = {sum(diag) ** 4}")
+        print()
 
 
 if __name__ == "__main__":
