@@ -8,7 +8,7 @@ FOUR = 4
 SYMBOLS = {1: "X", -1: "O", 0: "-"}
 
 
-def sorted_columns():
+def sorted_valid_moves(board):
     center = NUM_COLUMNS // 2
     columns = [center]
     for i in range(center):
@@ -19,13 +19,12 @@ def sorted_columns():
         col = center + i
         if col < NUM_COLUMNS:
             columns.append(col)
-    return columns
+    return [n for n in columns if board[n, COLUMN_HEIGHT - 1] == 0]
 
 
 def valid_moves(board):
     """Returns columns where a disc may be played"""
-    # return [n for n in range(NUM_COLUMNS) if board[n, COLUMN_HEIGHT - 1] == 0]
-    return [n for n in sorted_columns() if board[n, COLUMN_HEIGHT - 1] == 0]
+    return [n for n in range(NUM_COLUMNS) if board[n, COLUMN_HEIGHT - 1] == 0]
 
 
 def play(board, column, player):
@@ -139,7 +138,7 @@ def minmax(board, depth, alpha, beta, player):
         return None, eval(board)
     best_score = -player * math.inf
     best_move = None
-    for c in valid_moves(board):
+    for c in sorted_valid_moves(board):
         # if there are valid moves, initialize the best move to the first available
         # this way, if there are no good moves available, we will just choose the first one
         if best_move is None:
